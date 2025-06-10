@@ -108,7 +108,7 @@ abstract class Transport extends EventEmitter {
   void pause(Function() onPause) {}
 
   String createUri(String schema, Map<String, dynamic> query) {
-    return '$schema://${_hostname()}${_port()}${opts["path"]}${_query(query)}';
+    return '$schema://${_hostname()}${opts["path"]}${_query(query)}';
   }
 
   String _hostname() {
