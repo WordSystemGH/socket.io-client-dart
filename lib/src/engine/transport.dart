@@ -4,9 +4,9 @@
 import 'dart:convert';
 
 import 'package:logging/logging.dart';
+import 'package:socket_io_client/src/engine/socket.dart';
 import 'package:socket_io_common/src/engine/parser/parser.dart';
 import 'package:socket_io_common/src/util/event_emitter.dart';
-import 'package:socket_io_client/src/engine/socket.dart';
 
 abstract class Transport extends EventEmitter {
   static final Logger _logger = Logger('socket_io_client:Transport');
@@ -31,8 +31,7 @@ abstract class Transport extends EventEmitter {
   /// @param {String} str
   /// @return {Transport} for chaining
   onError(msg, [desc]) {
-    super.emitReserved(
-        'error', {'msg': msg, 'desc': desc, 'type': 'TransportError'});
+    super.emitReserved('error', {'msg': msg, 'desc': desc, 'type': 'TransportError'});
     return this;
   }
 
@@ -119,10 +118,9 @@ abstract class Transport extends EventEmitter {
 
   String _port() {
     final port = opts["port"];
-    if (port != null &&
-        ((opts["secure"] == true && port != 443) ||
-            (opts["secure"] != true && port != 80))) {
-      return ":$port";
+    if (port != null && ((opts["secure"] == true && port != 443) || (opts["secure"] != true && port != 80))) {
+      // return ":$port";
+      return "";
     } else {
       return "";
     }

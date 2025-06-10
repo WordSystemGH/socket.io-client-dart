@@ -11,12 +11,12 @@
 // Copyright (C) 2017 Potix Corporation. All Rights Reserved.
 import 'dart:async';
 import 'dart:js_interop';
-import 'package:web/web.dart';
 
 import 'package:logging/logging.dart';
 import 'package:socket_io_client/src/engine/transport.dart';
 import 'package:socket_io_common/src/engine/parser/parser.dart';
 import 'package:socket_io_common/src/util/event_emitter.dart';
+import 'package:web/web.dart';
 
 final Logger _logger = Logger('socket_io:transport.PollingTransport');
 
@@ -25,8 +25,7 @@ bool _hasXHR2() {
     // Dart's HttpRequest doesn't expose a direct way to check for XHR2 features,
     // but attempting to use features like setting `responseType` could serve as a proxy.
     final xhr = XMLHttpRequest();
-    xhr.responseType =
-        'arraybuffer'; // Attempting to set a responseType supported by XHR2
+    xhr.responseType = 'arraybuffer'; // Attempting to set a responseType supported by XHR2
     return true;
   } catch (e) {
     return false;
@@ -51,7 +50,8 @@ class PollingTransport extends Transport {
     String port = window.location.port;
 
     if (port.isEmpty) {
-      port = isSSL ? '443' : '80';
+      // port = isSSL ? '443' : '80';
+      port = '';
     }
 
     xd = opts['hostname'] != window.location.hostname || port != opts['port'];
@@ -184,7 +184,7 @@ class PollingTransport extends Transport {
     close([_]) {
       _logger.fine('writing close packet');
       self.write([
-        {'type': 'close'}
+        {'type': 'close'},
       ]);
     }
 
@@ -210,12 +210,15 @@ class PollingTransport extends Transport {
     var self = this;
     writable = false;
 
-    PacketParser.encodePayload(packets, callback: (data) {
-      self.doWrite(data, (_) {
-        self.writable = true;
-        self.emitReserved('drain');
-      });
-    });
+    PacketParser.encodePayload(
+      packets,
+      callback: (data) {
+        self.doWrite(data, (_) {
+          self.writable = true;
+          self.emitReserved('drain');
+        });
+      },
+    );
   }
 
   ///
@@ -228,8 +231,7 @@ class PollingTransport extends Transport {
 
     // cache busting is forced
     if (opts['timestampRequests'] != null) {
-      query[opts['timestampParam']] =
-          DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+      query[opts['timestampParam']] = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
     }
 
     if (supportsBinary == false && !query.containsKey('sid')) {
@@ -320,8 +322,7 @@ class Request extends EventEmitter {
       xhr.open(method, uri, true);
 
       try {
-        if (this.opts.containsKey('extraHeaders') &&
-            this.opts['extraHeaders']?.isNotEmpty == true) {
+        if (this.opts.containsKey('extraHeaders') && this.opts['extraHeaders']?.isNotEmpty == true) {
           this.opts['extraHeaders'].forEach((k, v) {
             xhr.setRequestHeader(k, v);
           });
