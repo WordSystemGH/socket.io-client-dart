@@ -7,17 +7,17 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:logging/logging.dart';
-import 'package:socket_io_common/src/util/event_emitter.dart';
 import 'package:socket_io_client/src/engine/parseqs.dart';
 import 'package:socket_io_common/src/engine/parser/parser.dart' as parser;
-import 'transport.dart';
+import 'package:socket_io_common/src/util/event_emitter.dart';
 
 // ignore: uri_does_not_exist
 import './transport/transports_stub.dart'
-// ignore: uri_does_not_exist
+    // ignore: uri_does_not_exist
     if (dart.library.js_interop) './transport/transports.dart'
-// ignore: uri_does_not_exist
+    // ignore: uri_does_not_exist
     if (dart.library.io) './transport/io_transports.dart';
+import 'transport.dart';
 
 final Logger _logger = Logger('socket_io_client:engine.Socket');
 
@@ -56,28 +56,25 @@ class Socket extends EventEmitter {
       var uri0 = Uri.parse(uri);
       opts['hostname'] = uri0.host;
       opts['secure'] = uri0.scheme == 'https' || uri0.scheme == 'wss';
-      opts['port'] = uri0.port;
+      // opts['port'] = uri0.port;
       if (uri0.hasQuery) opts['query'] = uri0.query;
     } else if (opts.containsKey('host')) {
       opts['hostname'] = Uri.parse(opts['host']).host;
     }
 
-    secure =
-        opts['secure'] ?? false /*?? (window.location.protocol == 'https:')*/;
+    secure = opts['secure'] ?? false /*?? (window.location.protocol == 'https:')*/;
 
     if (opts['hostname'] != null && !opts.containsKey('port')) {
       // if no port is specified manually, use the protocol default
       // opts['port'] = secure ? '443' : '80';
     }
 
-    hostname =
-        opts['hostname'] /*?? (window.location.hostname ?? 'localhost')*/;
-    port = opts[
-            'port'] /*??
-        (window.location.port.isNotEmpty
-            ? int.parse(window.location.port)
-            : (this.secure ? 443 : 80))*/
-        ;
+    hostname = opts['hostname'] /*?? (window.location.hostname ?? 'localhost')*/;
+    // port =
+    //     opts['port'] /*??
+    //     (window.location.port.isNotEmpty
+    //         ? int.parse(window.location.port)
+    //         : (this.secure ? 443 : 80))*/;
 
     transports = opts['transports'] ?? ['polling', 'websocket', 'webtransport'];
     writeBuffer = [];
@@ -92,17 +89,13 @@ class Socket extends EventEmitter {
       'rememberUpgrade': false,
       'addTrailingSlash': true,
       'rejectUnauthorized': true,
-      'perMessageDeflate': {
-        'threshold': 1024,
-      },
+      'perMessageDeflate': {'threshold': 1024},
       'transportOptions': {},
       'closeOnBeforeunload': false,
       ...opts,
     };
 
-    this.opts['path'] =
-        this.opts['path'].toString().replaceFirst(RegExp(r'/$'), '') +
-            (this.opts['addTrailingSlash'] ? '/' : '');
+    this.opts['path'] = this.opts['path'].toString().replaceFirst(RegExp(r'/$'), '') + (this.opts['addTrailingSlash'] ? '/' : '');
 
     if (opts['query'] is String) {
       this.opts['query'] = decode(opts['query']);
@@ -150,15 +143,7 @@ class Socket extends EventEmitter {
     // per-transport options
     final transportOptions = this.opts['transportOptions'][name] ?? {};
 
-    final opts = {
-      ...this.opts,
-      'query': query,
-      'socket': this,
-      'hostname': hostname,
-      'secure': secure,
-      'port': port,
-      ...transportOptions,
-    };
+    final opts = {...this.opts, 'query': query, 'socket': this, 'hostname': hostname, 'secure': secure, 'port': port, ...transportOptions};
 
     return Transports.newInstance(name, opts);
   }
@@ -169,9 +154,7 @@ class Socket extends EventEmitter {
   /// @api private
   void open() {
     dynamic transport;
-    if (opts['rememberUpgrade'] != null &&
-        priorWebsocketSuccess &&
-        transports.contains('websocket')) {
+    if (opts['rememberUpgrade'] != null && priorWebsocketSuccess && transports.contains('websocket')) {
       transport = 'websocket';
     } else if (transports.isEmpty) {
       // Emit error on next tick so it can be listened to
@@ -236,7 +219,7 @@ class Socket extends EventEmitter {
 
       _logger.fine('probe transport "$name" opened');
       transport!.send([
-        {'type': 'ping', 'data': 'probe'}
+        {'type': 'ping', 'data': 'probe'},
       ]);
       transport!.once('packet', (msg) {
         if (failed) return;
@@ -257,7 +240,7 @@ class Socket extends EventEmitter {
 
             setTransport(transport);
             transport!.send([
-              {'type': 'upgrade'}
+              {'type': 'upgrade'},
             ]);
             emit('upgrade', transport);
             transport = null;
@@ -266,8 +249,7 @@ class Socket extends EventEmitter {
           });
         } else {
           _logger.fine('probe transport "$name" failed');
-          emitReserved('upgradeError',
-              {'error': 'probe error', 'transport': transport!.name});
+          emitReserved('upgradeError', {'error': 'probe error', 'transport': transport!.name});
         }
       });
     }
@@ -291,8 +273,7 @@ class Socket extends EventEmitter {
 
       _logger.fine('probe transport "$name" failed because of error: $err');
 
-      emitReserved('upgradeError',
-          {'error': 'probe error: $err', 'transport': oldTransport!.name});
+      emitReserved('upgradeError', {'error': 'probe error: $err', 'transport': oldTransport!.name});
     }
 
     onTransportClose(_) => onerror('transport closed');
@@ -349,9 +330,7 @@ class Socket extends EventEmitter {
 
     // we check for `readyState` in case an `open`
     // listener already closed the socket
-    if ('open' == readyState &&
-        opts['upgrade'] == true &&
-        transport?.name == 'polling') {
+    if ('open' == readyState && opts['upgrade'] == true && transport?.name == 'polling') {
       _logger.fine('starting upgrade probes');
       for (var i = 0, l = upgrades!.length; i < l; i++) {
         probe(upgrades![i]);
@@ -364,9 +343,7 @@ class Socket extends EventEmitter {
   ///
   /// @api private
   void onPacket(Map packet) {
-    if ('opening' == readyState ||
-        'open' == readyState ||
-        'closing' == readyState) {
+    if ('opening' == readyState || 'open' == readyState || 'closing' == readyState) {
       var type = packet['type'];
       var data = packet['data'];
       _logger.fine('socket receive: type "$type", data "$data"');
@@ -427,11 +404,7 @@ class Socket extends EventEmitter {
   ///
   void resetPingTimeout() {
     pingTimeoutTimer?.cancel();
-    pingTimeoutTimer = Timer(
-        Duration(
-            milliseconds: pingInterval != null && pingTimeout != null
-                ? (pingInterval! + pingTimeout!)
-                : 0), () {
+    pingTimeoutTimer = Timer(Duration(milliseconds: pingInterval != null && pingTimeout != null ? (pingInterval! + pingTimeout!) : 0), () {
       onClose('ping timeout');
     });
   }
@@ -460,10 +433,7 @@ class Socket extends EventEmitter {
   ///
   /// @api private
   void flush() {
-    if ('closed' != readyState &&
-        transport!.writable == true &&
-        upgrading != true &&
-        writeBuffer.isNotEmpty) {
+    if ('closed' != readyState && transport!.writable == true && upgrading != true && writeBuffer.isNotEmpty) {
       final packets = getWritablePackets();
       _logger.fine('flushing ${packets.length} packets in socket');
       transport!.send(packets);
@@ -475,9 +445,7 @@ class Socket extends EventEmitter {
   }
 
   List getWritablePackets() {
-    final bool shouldCheckPayloadSize = maxPayload != null &&
-        transport?.name == "polling" &&
-        writeBuffer.length > 1;
+    final bool shouldCheckPayloadSize = maxPayload != null && transport?.name == "polling" && writeBuffer.length > 1;
 
     if (!shouldCheckPayloadSize) {
       return writeBuffer;
@@ -629,9 +597,7 @@ class Socket extends EventEmitter {
   ///
   /// @api private
   void onClose(reason, [desc]) {
-    if ('opening' == readyState ||
-        'open' == readyState ||
-        'closing' == readyState) {
+    if ('opening' == readyState || 'open' == readyState || 'closing' == readyState) {
       _logger.fine('socket close with reason: "$reason"');
 
       // clear timers
@@ -668,6 +634,5 @@ class Socket extends EventEmitter {
   /// @param {Array} server upgrades
   /// @api private
   ///
-  List filterUpgrades(List upgrades) =>
-      transports.where((transport) => upgrades.contains(transport)).toList();
+  List filterUpgrades(List upgrades) => transports.where((transport) => upgrades.contains(transport)).toList();
 }
